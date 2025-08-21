@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scripture Warriors - Bible Memory Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --neon-purple: #A855F7;
+            --neon-pink: #EC4899;
+            --neon-blue: #3B82F6;
+            --neon-green: #10B981;
+            --electric-yellow: #FCD34D;
+            --dark-bg: #0F172A;
+            --dark-card: #1E293B;
+            --dark-accent: #334155;
+            --light-text: #F1F5F9;
+            --gray-text: #94A3B8;
+            --white: #FFFFFF;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --shadow-neon: 0 0 30px rgba(168, 85, 247, 0.5);
+            --gradient-hero: linear-gradient(135deg, #A855F7 0%, #EC4899 50%, #3B82F6 100%);
+            --gradient-gold: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark-bg);
+            color: var(--light-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .screen {
+            display: none;
+            min-height: calc(100vh - 80px);
+            padding: 15px;
+            animation: screenSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes screenSlide {
+            from { 
+                opacity: 0; 
+                transform: translateX(30px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(1deg); }
+            75% { transform: translateY(5px) rotate(-1deg); }
+        }
+
+        @keyframes coin-spin {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        @keyframes levelUp {
+            0% { 
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% { 
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        .welcome-container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .logo-game {
+            font-size: 80px;
+            margin-bottom: 30px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 30px rgba(168, 85, 247, 0.5));
+        }
+
+        .game-header {
+            background: var(--gradient-hero);
+            padding: 25px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(168, 85, 247, 0.3);
+        }
+
+        .game-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .game-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-header p {
+            font-size: 16px;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .audio-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+        }
+
+        .audio-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1) rotate(20deg);
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: var(--dark-card);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--dark-accent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-hero);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--neon-purple);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .game-card {
+            background: var(--dark-card);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--dark-accent);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.2);
+            border-color: var(--neon-purple);
+        }
+
+        .game-menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .game-mode-card {
+            background: linear-gradient(135deg, var(--dark-card), var(--dark-accent));
+            padding: 25px 15px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-mode-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
+            transition: all 0.5s;
+            transform: translate(-50%, -50%);
+        }
+
+        .game-mode-card:hover::before {
+            width: 200%;
+            height: 200%;
+        }
+
+        .game-mode-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: var(--neon-purple);
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3);
+        }
+
+        .game-mode-card .icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+        }
+
+        .game-mode-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--light-text);
+        }
+
+        .game-mode-card p {
+            font-size: 12px;
+            color: var(--gray-text);
+        }
+
+        .btn-game {
+            background: var(--gradient-hero);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(168, 85, 247, 0.3);
+            display: inline-block;
+            text-decoration: none;
+            margin: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-game::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-game:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-game:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--neon-purple);
+            border: 2px solid var(--neon-purple);
+            padding: 13px 35px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+            margin: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--neon-purple);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .flashcard {
+            background: linear-gradient(135deg, var(--dark-card), var(--dark-accent));
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px auto;
+            max-width: 500px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            border: 2px solid var(--neon-purple);
+            box-shadow: 0 10px 40px rgba(168, 85, 247, 0.3);
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-content {
+            font-size: 24px;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+
+        .verse-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: var(--dark-card);
+            border: 2px solid var(--dark-accent);
+            border-radius: 15px;
+            color: var(--light-text);
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 10px 0;
+        }
+
+        .verse-input:focus {
+            outline: none;
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .progress-bar {
+            background: var(--dark-accent);
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-hero);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .achievement-badge {
+            display: inline-block;
+            background: var(--gradient-gold);
+            color: var(--dark-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 5px;
+            box-shadow: 0 5px 15px rgba(252, 211, 77, 0.3);
+            animation: pulse-glow 2s infinite;
+        }
+
+        .leaderboard-item {
+            background: var(--dark-card);
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--dark-accent);
+            transition: all 0.3s;
+        }
+
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+            border-color: var(--neon-purple);
+        }
+
+        .leaderboard-rank {
+            width: 35px;
+            height: 35px;
+            background: var(--gradient-hero);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            margin-right: 15px;
+            box-shadow: 0 5px 15px rgba(168, 85, 247, 0.3);
+        }
+
+        .leaderboard-rank.gold {
+            background: var(--gradient-gold);
+            box-shadow: 0 5px 15px rgba(252, 211, 77, 0.5);
+        }
+
+        .streak-fire {
+            font-size: 32px;
+            display: inline-block;
+            animation: float 2s ease-in-out infinite;
+            filter: drop-shadow(0 5px 10px rgba(251, 146, 60, 0.5));
+        }
+
+        .challenge-timer {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--electric-yellow);
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(252, 211, 77, 0.5);
+        }
+
+        .reward-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: var(--gradient-gold);
+            color: var(--dark-bg);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 3000;
+            box-shadow: 0 20px 60px rgba(252, 211, 77, 0.5);
+            animation: rewardPop 0.5s forwards;
+        }
+
+        @keyframes rewardPop {
+            to {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .coin-icon {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: var(--gradient-gold);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: 800;
+            color: var(--dark-bg);
+            animation: coin-spin 2s linear infinite;
+            box-shadow: 0 5px 15px rgba(252, 211, 77, 0.3);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--dark-card);
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border-top: 2px solid var(--neon-purple);
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--gray-text);
+            position: relative;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: var(--gradient-hero);
+            transition: width 0.3s;
+        }
+
+        .nav-item:hover::before,
+        .nav-item.active::before {
+            width: 60%;
+        }
+
+        .nav-item:hover {
+            color: var(--neon-purple);
+        }
+
+        .nav-item.active {
+            color: var(--neon-purple);
+        }
+
+        .nav-item .icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .nav-item .label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 2000;
+            padding: 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--dark-card);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid var(--neon-purple);
+            box-shadow: 0 20px 60px rgba(168, 85, 247, 0.3);
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(50px); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateY(0); 
+                opacity: 1; 
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--dark-accent);
+            border: 2px solid var(--neon-purple);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--neon-purple);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-modal:hover {
+            background: var(--neon-purple);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, var(--neon-green), #059669);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            animation: slideInRight 0.5s;
+            font-weight: 700;
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-header h1 { font-size: 24px; }
+            .game-menu-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .modal-content { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="screen active">
+        <div class="welcome-container">
+            <div class="logo-game">⚔️📖</div>
+            <h1 style="color: var(--light-text); font-size: 42px; margin-bottom: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">
+                Scripture Warriors
+            </h1>
+            <p style="color: var(--gray-text); line-height: 1.8; font-size: 18px; margin-bottom: 30px;">
+                Level up your faith! Master God's Word through epic challenges, 
+                earn rewards, and compete with friends. Ready to become a Scripture Warrior?
+            </p>
+            <div class="game-card" style="background: linear-gradient(135deg, var(--dark-card), var(--dark-accent));">
+                <h3 style="color: var(--electric-yellow); margin-bottom: 15px;">🏆 Game Features</h3>
+                <ul style="list-style: none; line-height: 2; text-align: left;">
+                    <li>⚡ Quick Battle Mode - 60-second challenges</li>
+                    <li>🎯 Practice Arena - Master verses at your pace</li>
+                    <li>🔥 Daily Streaks - Keep your fire burning</li>
+                    <li>💰 Earn Coins - Unlock rewards and power-ups</li>
+                    <li>📊 Leaderboards - Compete globally</li>
+                    <li>🎖️ Achievements - Collect all badges</li>
+                </ul>
+            </div>
+            <button class="btn-game" onclick="startGame()">START YOUR QUEST</button>
+        </div>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>Scripture Warriors</h1>
+            <p id="playerGreeting">Welcome, Warrior!</p>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="playerLevel">1</div>
+                <div class="stat-label">Level</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="playerCoins">0</div>
+                <div class="stat-label">Coins</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="playerStreak">0</div>
+                <div class="stat-label">Streak 🔥</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="playerXP">0</div>
+                <div class="stat-label">XP</div>
+            </div>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Choose Your Battle</h2>
+            <div class="game-menu-grid">
+                <div class="game-mode-card" onclick="showScreen('quickBattleScreen')">
+                    <span class="icon">⚡</span>
+                    <h3>Quick Battle</h3>
+                    <p>60-second challenge</p>
+                </div>
+                <div class="game-mode-card" onclick="showScreen('practiceScreen')">
+                    <span class="icon">🎯</span>
+                    <h3>Practice Arena</h3>
+                    <p>Master verses</p>
+                </div>
+                <div class="game-mode-card" onclick="showScreen('dailyScreen')">
+                    <span class="icon">📅</span>
+                    <h3>Daily Quest</h3>
+                    <p>Today's verse</p>
+                </div>
+                <div class="game-mode-card" onclick="showScreen('multiplayerScreen')">
+                    <span class="icon">👥</span>
+                    <h3>VS Friends</h3>
+                    <p>Challenge others</p>
+                </div>
+                <div class="game-mode-card" onclick="showScreen('shopScreen')">
+                    <span class="icon">🛍️</span>
+                    <h3>Power Shop</h3>
+                    <p>Spend coins</p>
+                </div>
+                <div class="game-mode-card" onclick="showScreen('achievementsScreen')">
+                    <span class="icon">🏆</span>
+                    <h3>Achievements</h3>
+                    <p>Your badges</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-card" style="background: linear-gradient(135deg, rgba(252, 211, 77, 0.1), rgba(252, 211, 77, 0.05));">
+            <h3 style="color: var(--electric-yellow); margin-bottom: 15px;">
+                <span class="streak-fire">🔥</span> Daily Streak: <span id="streakDays">0</span> Days
+            </h3>
+            <p style="color: var(--gray-text);">Keep playing daily to maintain your streak and earn bonus rewards!</p>
+        </div>
+    </div>
+
+    <!-- Quick Battle Screen -->
+    <div id="quickBattleScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>⚡ Quick Battle</h1>
+            <p>60 seconds to glory!</p>
+        </div>
+
+        <div class="challenge-timer" id="battleTimer">60</div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Complete the Verse!</h2>
+            <div id="battleVerse" style="font-size: 20px; line-height: 1.6; margin-bottom: 20px;">
+                "For God so loved the world that he gave his one and only ___"
+            </div>
+            <input type="text" class="verse-input" id="battleAnswer" placeholder="Type the missing word..." onkeypress="if(event.key==='Enter') checkBattleAnswer()">
+            <button class="btn-game" onclick="checkBattleAnswer()" style="width: 100%;">SUBMIT</button>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="battleProgress" style="width: 0%;">
+                <span id="battleScore">0 / 10</span>
+            </div>
+        </div>
+
+        <button class="btn-secondary" onclick="endBattle()" style="width: 100%;">End Battle</button>
+    </div>
+
+    <!-- Practice Arena Screen -->
+    <div id="practiceScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>🎯 Practice Arena</h1>
+            <p>Master verses at your pace</p>
+        </div>
+
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <div class="flashcard-content" id="flashcardContent">
+                <div id="cardFront">
+                    "I can do all things through Christ who strengthens me."
+                    <br><br>
+                    <small style="color: var(--gray-text);">Click to reveal reference</small>
+                </div>
+                <div id="cardBack" style="display: none;">
+                    Philippians 4:13
+                    <br><br>
+                    <small style="color: var(--gray-text);">Click to see verse</small>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="btn-game" onclick="previousCard()">← Previous</button>
+            <button class="btn-game" onclick="nextCard()">Next →</button>
+        </div>
+
+        <div class="game-card">
+            <h3 style="color: var(--light-text); margin-bottom: 15px;">Practice Stats</h3>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-value" id="cardsStudied">0</div>
+                    <div class="stat-label">Cards Studied</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="practiceTime">0:00</div>
+                    <div class="stat-label">Time</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-secondary" onclick="showScreen('gameScreen')" style="width: 100%;">Back to Menu</button>
+    </div>
+
+    <!-- Daily Quest Screen -->
+    <div id="dailyScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>📅 Daily Quest</h1>
+            <p>Master today's verse</p>
+        </div>
+
+        <div class="game-card" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1));">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Verse of the Day</h2>
+            <div style="font-size: 22px; line-height: 1.8; margin-bottom: 20px;" id="dailyVerse">
+                "Trust in the Lord with all your heart and lean not on your own understanding."
+            </div>
+            <p style="color: var(--electric-yellow); font-weight: 700;">- Proverbs 3:5</p>
+        </div>
+
+        <div class="game-card">
+            <h3 style="color: var(--light-text); margin-bottom: 15px;">Memory Challenge</h3>
+            <p style="color: var(--gray-text); margin-bottom: 20px;">Type the verse from memory:</p>
+            <textarea class="verse-input" id="dailyMemory" rows="4" placeholder="Type the verse here..."></textarea>
+            <button class="btn-game" onclick="checkDailyVerse()" style="width: 100%; margin-top: 15px;">Check Memory</button>
+        </div>
+
+        <div class="game-card">
+            <h3 style="color: var(--electric-yellow); margin-bottom: 15px;">🎁 Daily Rewards</h3>
+            <ul style="list-style: none; line-height: 2;">
+                <li>✅ Complete daily verse: <span class="coin-icon">+50</span></li>
+                <li>✅ Perfect memory: <span class="coin-icon">+100</span></li>
+                <li>✅ 7-day streak: <span class="coin-icon">+500</span></li>
+            </ul>
+        </div>
+
+        <button class="btn-secondary" onclick="showScreen('gameScreen')" style="width: 100%;">Back to Menu</button>
+    </div>
+
+    <!-- Multiplayer Screen -->
+    <div id="multiplayerScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>👥 VS Friends</h1>
+            <p>Challenge other warriors</p>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">🏆 Global Leaderboard</h2>
+            <div id="leaderboard">
+                <div class="leaderboard-item">
+                    <div style="display: flex; align-items: center;">
+                        <div class="leaderboard-rank gold">1</div>
+                        <div>
+                            <div style="font-weight: 700;">BibleMaster2024</div>
+                            <div style="font-size: 12px; color: var(--gray-text);">Level 42</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--electric-yellow); font-weight: 700;">15,420 XP</div>
+                        <div style="font-size: 12px; color: var(--gray-text);">🔥 30 days</div>
+                    </div>
+                </div>
+                <div class="leaderboard-item">
+                    <div style="display: flex; align-items: center;">
+                        <div class="leaderboard-rank">2</div>
+                        <div>
+                            <div style="font-weight: 700;">FaithWarrior</div>
+                            <div style="font-size: 12px; color: var(--gray-text);">Level 38</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--electric-yellow); font-weight: 700;">14,200 XP</div>
+                        <div style="font-size: 12px; color: var(--gray-text);">🔥 25 days</div>
+                    </div>
+                </div>
+                <div class="leaderboard-item">
+                    <div style="display: flex; align-items: center;">
+                        <div class="leaderboard-rank">3</div>
+                        <div>
+                            <div style="font-weight: 700;">ScriptureNinja</div>
+                            <div style="font-size: 12px; color: var(--gray-text);">Level 35</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--electric-yellow); font-weight: 700;">13,500 XP</div>
+                        <div style="font-size: 12px; color: var(--gray-text);">🔥 22 days</div>
+                    </div>
+                </div>
+                <div class="leaderboard-item" style="border: 2px solid var(--neon-purple);">
+                    <div style="display: flex; align-items: center;">
+                        <div class="leaderboard-rank">25</div>
+                        <div>
+                            <div style="font-weight: 700; color: var(--neon-purple);">You</div>
+                            <div style="font-size: 12px; color: var(--gray-text);">Level <span id="yourLevel">1</span></div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--electric-yellow); font-weight: 700;"><span id="yourXP">0</span> XP</div>
+                        <div style="font-size: 12px; color: var(--gray-text);">🔥 <span id="yourStreak">0</span> days</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-card">
+            <h3 style="color: var(--light-text); margin-bottom: 15px;">Challenge a Friend</h3>
+            <input type="text" class="verse-input" placeholder="Enter friend's username...">
+            <button class="btn-game" onclick="challengeFriend()" style="width: 100%; margin-top: 15px;">Send Challenge</button>
+        </div>
+
+        <button class="btn-secondary" onclick="showScreen('gameScreen')" style="width: 100%;">Back to Menu</button>
+    </div>
+
+    <!-- Power Shop Screen -->
+    <div id="shopScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>🛍️ Power Shop</h1>
+            <p>Your Coins: <span class="coin-icon" id="shopCoins">0</span></p>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Power-Ups</h2>
+            
+            <div class="game-card" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), transparent);">
+                <h3 style="color: var(--neon-purple);">⏰ Time Freeze</h3>
+                <p style="color: var(--gray-text); margin: 10px 0;">Freeze timer for 10 seconds in Quick Battle</p>
+                <button class="btn-game" onclick="buyPowerUp('timeFreeze', 100)">Buy for 100 <span class="coin-icon">C</span></button>
+            </div>
+
+            <div class="game-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), transparent);">
+                <h3 style="color: var(--neon-pink);">💡 Hint Helper</h3>
+                <p style="color: var(--gray-text); margin: 10px 0;">Get a hint for any verse</p>
+                <button class="btn-game" onclick="buyPowerUp('hint', 50)">Buy for 50 <span class="coin-icon">C</span></button>
+            </div>
+
+            <div class="game-card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent);">
+                <h3 style="color: var(--neon-blue);">🎯 Perfect Week</h3>
+                <p style="color: var(--gray-text); margin: 10px 0;">Double XP for 7 days</p>
+                <button class="btn-game" onclick="buyPowerUp('doubleXP', 500)">Buy for 500 <span class="coin-icon">C</span></button>
+            </div>
+        </div>
+
+        <button class="btn-secondary" onclick="showScreen('gameScreen')" style="width: 100%;">Back to Menu</button>
+    </div>
+
+    <!-- Achievements Screen -->
+    <div id="achievementsScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>🏆 Achievements</h1>
+            <p>Your badge collection</p>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Earned Badges</h2>
+            <div id="achievementsList">
+                <div class="achievement-badge">🎯 First Verse</div>
+                <div class="achievement-badge">🔥 7-Day Streak</div>
+                <div class="achievement-badge">⚡ Speed Demon</div>
+            </div>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Locked Achievements</h2>
+            <div style="opacity: 0.5;">
+                <div class="game-card">
+                    <h3>🌟 Memory Master</h3>
+                    <p style="color: var(--gray-text);">Memorize 50 verses perfectly</p>
+                    <div class="progress-bar" style="height: 20px;">
+                        <div class="progress-fill" style="width: 30%;">15/50</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <h3>👑 Scripture King</h3>
+                    <p style="color: var(--gray-text);">Reach Level 50</p>
+                    <div class="progress-bar" style="height: 20px;">
+                        <div class="progress-fill" style="width: 2%;">1/50</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <h3>💰 Coin Collector</h3>
+                    <p style="color: var(--gray-text);">Earn 10,000 coins</p>
+                    <div class="progress-bar" style="height: 20px;">
+                        <div class="progress-fill" style="width: 0%;">0/10,000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-secondary" onclick="showScreen('gameScreen')" style="width: 100%;">Back to Menu</button>
+    </div>
+
+    <!-- Crisis Screen -->
+    <div id="crisisScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>Need Help?</h1>
+            <p>Support & Encouragement</p>
+        </div>
+
+        <div class="game-card" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), transparent);">
+            <h2 style="color: #EF4444; margin-bottom: 15px;">⚠️ Need Support?</h2>
+            <p style="line-height: 1.8; margin-bottom: 20px;">
+                If you're struggling with faith, feeling discouraged, or need someone to talk to, 
+                remember that God loves you and help is available.
+            </p>
+            <p style="font-weight: bold; color: #EF4444;">
+                If you are in crisis, please contact your local helpline for immediate support.
+            </p>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Encouraging Verses</h2>
+            <div style="line-height: 2;">
+                <p>💚 "Cast all your anxiety on him because he cares for you." - 1 Peter 5:7</p>
+                <p>💜 "The Lord is close to the brokenhearted." - Psalm 34:18</p>
+                <p>💙 "I can do all things through Christ who strengthens me." - Philippians 4:13</p>
+            </div>
+        </div>
+
+        <button class="btn-secondary" onclick="showScreen('gameScreen')" style="width: 100%;">Back to Game</button>
+    </div>
+
+    <!-- Resources Screen -->
+    <div id="resourcesScreen" class="screen">
+        <div class="game-header">
+            <button class="audio-toggle" onclick="toggleAudio()">🔊</button>
+            <h1>Game Guide</h1>
+            <p>Tips & strategies</p>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">How to Play</h2>
+            <ul style="line-height: 2; margin-left: 20px;">
+                <li>⚡ <strong>Quick Battle:</strong> Complete verses in 60 seconds</li>
+                <li>🎯 <strong>Practice Arena:</strong> Study flashcards at your pace</li>
+                <li>📅 <strong>Daily Quest:</strong> Master one verse each day</li>
+                <li>👥 <strong>VS Friends:</strong> Compete on leaderboards</li>
+                <li>💰 <strong>Earn Coins:</strong> Complete challenges for rewards</li>
+                <li>🏆 <strong>Achievements:</strong> Unlock badges and level up</li>
+            </ul>
+        </div>
+
+        <div class="game-card">
+            <h2 style="color: var(--light-text); margin-bottom: 20px;">Memory Tips</h2>
+            <ul style="line-height: 2; margin-left: 20px;">
+                <li>📖 Read the verse multiple times out loud</li>
+                <li>✍️ Write it down by hand</li>
+                <li>🎵 Create a melody or rhythm</li>
+                <li>🖼️ Visualize the meaning</li>
+                <li>🔄 Review daily for a week</li>
+                <li>👥 Practice with friends</li>
+            </ul>
+        </div>
+
+        <button class="btn-secondary" onclick="showScreen('gameScreen')" style="width: 100%;">Back to Game</button>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="showScreen('gameScreen')">
+            <span class="icon">🎮</span>
+            <span class="label">Play</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('crisisScreen')">
+            <span class="icon">🆘</span>
+            <span class="label">Help</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('resourcesScreen')">
+            <span class="icon">📚</span>
+            <span class="label">Guide</span>
+        </div>
+        <div class="nav-item" onclick="showInfoModal()">
+            <span class="icon">ℹ️</span>
+            <span class="label">Info</span>
+        </div>
+        <div class="nav-item" onclick="showAboutModal()">
+            <span class="icon">✨</span>
+            <span class="label">About</span>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('infoModal')">×</button>
+            <h2 style="color: var(--light-text); margin-bottom: 25px;">How to Play</h2>
+            
+            <h3 style="color: var(--neon-purple); margin-top: 25px;">Game Modes</h3>
+            <ul style="line-height: 2.2; margin-bottom: 25px; color: var(--gray-text);">
+                <li>⚡ <strong>Quick Battle:</strong> Race against time to complete verses</li>
+                <li>🎯 <strong>Practice Arena:</strong> Flashcard study mode</li>
+                <li>📅 <strong>Daily Quest:</strong> New verse challenge every day</li>
+                <li>👥 <strong>VS Friends:</strong> Compete on global leaderboards</li>
+                <li>🛍️ <strong>Power Shop:</strong> Buy power-ups with earned coins</li>
+                <li>🏆 <strong>Achievements:</strong> Unlock badges and rewards</li>
+            </ul>
+
+            <h3 style="color: var(--neon-purple); margin-top: 25px;">Earning System</h3>
+            <p style="line-height: 1.8; margin-bottom: 20px; color: var(--gray-text);">
+                • Complete verses to earn XP and level up<br>
+                • Daily streaks multiply your rewards<br>
+                • Coins unlock power-ups and bonuses<br>
+                • Achievements grant special badges<br>
+                • Compete for the top leaderboard spot
+            </p>
+
+            <h3 style="color: var(--neon-purple); margin-top: 25px;">Power-Ups</h3>
+            <p style="line-height: 1.8; margin-bottom: 20px; color: var(--gray-text);">
+                • Time Freeze - Extra time in battles<br>
+                • Hint Helper - Get clues for tough verses<br>
+                • Double XP - Level up faster<br>
+                • Skip Card - Pass difficult verses
+            </p>
+
+            <h3 style="color: var(--neon-purple); margin-top: 25px;">Install on Your Phone</h3>
+            <p style="line-height: 1.8; color: var(--gray-text);">
+                <strong>iPhone:</strong> Tap Share → Add to Home Screen<br>
+                <strong>Android:</strong> Tap Menu (⋮) → Add to Home Screen
+            </p>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('aboutModal')">×</button>
+            <h2 style="color: var(--light-text); margin-bottom: 25px;">About Scripture Warriors</h2>
+            
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h3 style="color: var(--electric-yellow); margin-bottom: 15px;">Made with ⚔️📖 by Justin</h3>
+                <p style="color: var(--gray-text); font-size: 18px;">Depths to Heights</p>
+            </div>
+
+            <div class="game-card" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), transparent);">
+                <strong>Our Mission:</strong><br>
+                To make Scripture memorization fun, engaging, and addictive for young believers 
+                through gamification, friendly competition, and rewards.
+            </div>
+
+            <div style="margin: 30px 0;">
+                <p style="line-height: 1.8; color: var(--gray-text);">
+                    At Depths to Heights, we believe God's Word should be hidden in our hearts. 
+                    Scripture Warriors transforms Bible memorization from a chore into an epic adventure, 
+                    helping youth retain Scripture through the power of play.
+                </p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="https://depthstoheights.org" target="_blank" class="btn-secondary">
+                    Visit Our Website
+                </a>
+                <p style="margin: 20px 0; color: var(--gray-text);">
+                    Contact: depthstoheights@gmail.com
+                </p>
+                <button class="btn-game" onclick="window.open('https://www.paypal.com/donate/?hosted_button_id=8GRE7B8C3TP2U', '_blank')">
+                    Support Our Mission
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAA==" type="audio/wav">
+    </audio>
+
+    <script>
+        // Game State
+        let gameState = {
+            currentScreen: 'welcomeScreen',
+            audioEnabled: false,
+            playerName: 'Warrior',
+            level: 1,
+            xp: 0,
+            coins: 0,
+            streak: 0,
+            lastPlayed: null,
+            versesMemorized: 0,
+            achievements: ['firstVerse'],
+            powerUps: {
+                timeFreeze: 0,
+                hint: 0,
+                doubleXP: false
+            },
+            currentCardIndex: 0,
+            battleScore: 0,
+            battleTimer: null,
+            practiceTime: 0,
+            practiceTimer: null,
+            cardsStudied: 0
+        };
+
+        // Scripture Data
+        const verses = [
+            { text: "For God so loved the world that he gave his one and only Son", reference: "John 3:16", missing: "Son" },
+            { text: "I can do all things through Christ who strengthens me", reference: "Philippians 4:13", missing: "strengthens" },
+            { text: "The Lord is my shepherd, I shall not want", reference: "Psalm 23:1", missing: "want" },
+            { text: "Trust in the Lord with all your heart", reference: "Proverbs 3:5", missing: "heart" },
+            { text: "Be strong and courageous", reference: "Joshua 1:9", missing: "courageous" },
+            { text: "Love is patient, love is kind", reference: "1 Corinthians 13:4", missing: "kind" },
+            { text: "In the beginning God created the heavens and the earth", reference: "Genesis 1:1", missing: "beginning" },
+            { text: "For by grace you have been saved through faith", reference: "Ephesians 2:8", missing: "grace" },
+            { text: "The joy of the Lord is your strength", reference: "Nehemiah 8:10", missing: "strength" },
+            { text: "Cast all your anxiety on him because he cares for you", reference: "1 Peter 5:7", missing: "anxiety" }
+        ];
+
+        const flashcards = [
+            { verse: "I can do all things through Christ who strengthens me.", reference: "Philippians 4:13" },
+            { verse: "The Lord is my shepherd, I shall not want.", reference: "Psalm 23:1" },
+            { verse: "For God so loved the world that he gave his one and only Son.", reference: "John 3:16" },
+            { verse: "Trust in the Lord with all your heart.", reference: "Proverbs 3:5" },
+            { verse: "Be strong and courageous.", reference: "Joshua 1:9" },
+            { verse: "Cast all your anxiety on him because he cares for you.", reference: "1 Peter 5:7" },
+            { verse: "The joy of the Lord is your strength.", reference: "Nehemiah 8:10" },
+            { verse: "Love is patient, love is kind.", reference: "1 Corinthians 13:4" }
+        ];
+
+        // Initialize Game
+        function initGame() {
+            loadGameState();
+            updateStats();
+            checkDailyStreak();
+            startPracticeTimer();
+        }
+
+        // Navigation
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            gameState.currentScreen = screenId;
+            
+            // Screen-specific actions
+            if (screenId === 'quickBattleScreen') {
+                startBattle();
+            } else if (screenId === 'practiceScreen') {
+                loadFlashcard();
+            }
+            
+            saveGameState();
+        }
+
+        function startGame() {
+            showScreen('gameScreen');
+            saveGameState();
+        }
+
+        // Quick Battle Functions
+        function startBattle() {
+            gameState.battleScore = 0;
+            let timeLeft = 60;
+            
+            // Clear any existing timer
+            if (gameState.battleTimer) {
+                clearInterval(gameState.battleTimer);
+            }
+            
+            loadBattleVerse();
+            
+            gameState.battleTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('battleTimer').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endBattle();
+                }
+            }, 1000);
+        }
+
+        function loadBattleVerse() {
+            const verse = verses[Math.floor(Math.random() * verses.length)];
+            const verseText = verse.text.replace(verse.missing, '___');
+            document.getElementById('battleVerse').innerHTML = `"${verseText}"<br><small style="color: var(--gray-text);">${verse.reference}</small>`;
+            document.getElementById('battleAnswer').value = '';
+            document.getElementById('battleAnswer').dataset.answer = verse.missing;
+        }
+
+        function checkBattleAnswer() {
+            const answer = document.getElementById('battleAnswer').value.toLowerCase().trim();
+            const correct = document.getElementById('battleAnswer').dataset.answer.toLowerCase();
+            
+            if (answer === correct) {
+                gameState.battleScore++;
+                gameState.xp += 10;
+                gameState.coins += 5;
+                updateStats();
+                
+                // Update progress
+                const progress = (gameState.battleScore / 10) * 100;
+                document.getElementById('battleProgress').style.width = progress + '%';
+                document.getElementById('battleScore').textContent = `${gameState.battleScore} / 10`;
+                
+                // Show success and load next verse
+                showSuccess('Correct! +10 XP +5 Coins');
+                
+                if (gameState.battleScore >= 10) {
+                    endBattle(true);
+                } else {
+                    loadBattleVerse();
+                }
+            } else {
+                document.getElementById('battleAnswer').style.borderColor = '#EF4444';
+                setTimeout(() => {
+                    document.getElementById('battleAnswer').style.borderColor = '';
+                }, 1000);
+            }
+        }
+
+        function endBattle(completed = false) {
+            if (gameState.battleTimer) {
+                clearInterval(gameState.battleTimer);
+                gameState.battleTimer = null;
+            }
+            
+            if (completed) {
+                gameState.xp += 100;
+                gameState.coins += 50;
+                showReward('Battle Complete! +100 XP +50 Coins');
+            }
+            
+            updateStats();
+            saveGameState();
+            showScreen('gameScreen');
+        }
+
+        // Practice Functions
+        function loadFlashcard() {
+            const card = flashcards[gameState.currentCardIndex];
+            document.getElementById('cardFront').innerHTML = 
+                `"${card.verse}"<br><br><small style="color: var(--gray-text);">Click to reveal reference</small>`;
+            document.getElementById('cardBack').innerHTML = 
+                `${card.reference}<br><br><small style="color: var(--gray-text);">Click to see verse</small>`;
+            
+            // Reset flip
+            document.getElementById('flashcard').classList.remove('flipped');
+            document.getElementById('cardFront').style.display = 'block';
+            document.getElementById('cardBack').style.display = 'none';
+        }
+
+        function flipCard() {
+            const flashcard = document.getElementById('flashcard');
+            const front = document.getElementById('cardFront');
+            const back = document.getElementById('cardBack');
+            
+            flashcard.classList.toggle('flipped');
+            
+            if (front.style.display === 'none') {
+                front.style.display = 'block';
+                back.style.display = 'none';
+            } else {
+                front.style.display = 'none';
+                back.style.display = 'block';
+            }
+            
+            gameState.cardsStudied++;
+            document.getElementById('cardsStudied').textContent = gameState.cardsStudied;
+        }
+
+        function nextCard() {
+            gameState.currentCardIndex = (gameState.currentCardIndex + 1) % flashcards.length;
+            loadFlashcard();
+        }
+
+        function previousCard() {
+            gameState.currentCardIndex = (gameState.currentCardIndex - 1 + flashcards.length) % flashcards.length;
+            loadFlashcard();
+        }
+
+        function startPracticeTimer() {
+            if (gameState.practiceTimer) return;
+            
+            gameState.practiceTimer = setInterval(() => {
+                gameState.practiceTime++;
+                const minutes = Math.floor(gameState.practiceTime / 60);
+                const seconds = gameState.practiceTime % 60;
+                const timeEl = document.getElementById('practiceTime');
+                if (timeEl) {
+                    timeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        // Daily Quest
+        function checkDailyVerse() {
+            const memory = document.getElementById('dailyMemory').value.toLowerCase().trim();
+            const correctVerse = document.getElementById('dailyVerse').textContent.toLowerCase().trim();
+            
+            const similarity = calculateSimilarity(memory, correctVerse);
+            
+            if (similarity > 0.8) {
+                gameState.xp += similarity === 1 ? 100 : 50;
+                gameState.coins += similarity === 1 ? 100 : 50;
+                updateStats();
+                showReward(`${similarity === 1 ? 'Perfect' : 'Good'} Memory! +${similarity === 1 ? 100 : 50} XP & Coins`);
+            } else {
+                showSuccess('Keep practicing! Try again.');
+            }
+        }
+
+        function calculateSimilarity(str1, str2) {
+            const words1 = str1.split(' ');
+            const words2 = str2.split(' ');
+            let matches = 0;
+            
+            words1.forEach(word => {
+                if (words2.includes(word)) matches++;
+            });
+            
+            return matches / Math.max(words1.length, words2.length);
+        }
+
+        // Shop Functions
+        function buyPowerUp(type, cost) {
+            if (gameState.coins >= cost) {
+                gameState.coins -= cost;
+                
+                switch(type) {
+                    case 'timeFreeze':
+                        gameState.powerUps.timeFreeze += 3;
+                        showSuccess('Time Freeze purchased! +3 uses');
+                        break;
+                    case 'hint':
+                        gameState.powerUps.hint += 5;
+                        showSuccess('Hint Helper purchased! +5 uses');
+                        break;
+                    case 'doubleXP':
+                        gameState.powerUps.doubleXP = true;
+                        showSuccess('Double XP activated for 7 days!');
+                        break;
+                }
+                
+                updateStats();
+                saveGameState();
+            } else {
+                showSuccess('Not enough coins!');
+            }
+        }
+
+        // Multiplayer
+        function challengeFriend() {
+            showSuccess('Challenge sent! (Coming soon)');
+        }
+
+        // Daily Streak
+        function checkDailyStreak() {
+            const today = new Date().toDateString();
+            const lastPlayed = gameState.lastPlayed ? new Date(gameState.lastPlayed).toDateString() : null;
+            
+            if (lastPlayed !== today) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastPlayed === yesterday.toDateString()) {
+                    gameState.streak++;
+                    showReward(`🔥 ${gameState.streak} Day Streak!`);
+                } else if (lastPlayed !== today) {
+                    gameState.streak = 1;
+                }
+                
+                gameState.lastPlayed = new Date().toISOString();
+                saveGameState();
+            }
+            
+            updateStats();
+        }
+
+        // Update Stats
+        function updateStats() {
+            // Main stats
+            document.getElementById('playerLevel').textContent = gameState.level;
+            document.getElementById('playerCoins').textContent = gameState.coins;
+            document.getElementById('playerStreak').textContent = gameState.streak;
+            document.getElementById('playerXP').textContent = gameState.xp;
+            
+            // Shop coins
+            const shopCoinsEl = document.getElementById('shopCoins');
+            if (shopCoinsEl) shopCoinsEl.textContent = gameState.coins;
+            
+            // Streak days
+            const streakDaysEl = document.getElementById('streakDays');
+            if (streakDaysEl) streakDaysEl.textContent = gameState.streak;
+            
+            // Leaderboard
+            document.getElementById('yourLevel').textContent = gameState.level;
+            document.getElementById('yourXP').textContent = gameState.xp;
+            document.getElementById('yourStreak').textContent = gameState.streak;
+            
+            // Check level up
+            const xpNeeded = gameState.level * 100;
+            if (gameState.xp >= xpNeeded) {
+                levelUp();
+            }
+        }
+
+        function levelUp() {
+            gameState.level++;
+            gameState.xp = 0;
+            showReward(`🎉 LEVEL UP! You're now Level ${gameState.level}!`);
+            updateStats();
+            saveGameState();
+        }
+
+        // UI Feedback
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            successDiv.style.position = 'fixed';
+            successDiv.style.top = '20px';
+            successDiv.style.left = '50%';
+            successDiv.style.transform = 'translateX(-50%)';
+            successDiv.style.zIndex = '3000';
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 2000);
+        }
+
+        function showReward(message) {
+            const rewardDiv = document.createElement('div');
+            rewardDiv.className = 'reward-popup';
+            rewardDiv.innerHTML = `
+                <h2 style="font-size: 32px; margin-bottom: 10px;">🎉</h2>
+                <p style="font-size: 20px; font-weight: 800;">${message}</p>
+            `;
+            document.body.appendChild(rewardDiv);
+            
+            setTimeout(() => {
+                rewardDiv.remove();
+            }, 3000);
+        }
+
+        // Audio
+        function toggleAudio() {
+            gameState.audioEnabled = !gameState.audioEnabled;
+            const buttons = document.querySelectorAll('.audio-toggle');
+            buttons.forEach(btn => {
+                btn.textContent = gameState.audioEnabled ? '🔇' : '🔊';
+            });
+        }
+
+        // Modals
+        function showInfoModal() {
+            document.getElementById('infoModal').classList.add('active');
+        }
+
+        function showAboutModal() {
+            document.getElementById('aboutModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Click outside modal to close
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // State Management
+        function saveGameState() {
+            localStorage.setItem('scriptureWarriorsState', JSON.stringify(gameState));
+        }
+
+        function loadGameState() {
+            const saved = localStorage.getItem('scriptureWarriorsState');
+            if (saved) {
+                gameState = { ...gameState, ...JSON.parse(saved) };
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
